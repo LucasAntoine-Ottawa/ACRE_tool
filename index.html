@@ -583,7 +583,7 @@ function alcoholRisk(disease, age, sex, drinks) {
 
   // Formula from compute_risk.py:
   // (RR / (prev*RR + (1-prev))) * baseline
-  const adjusted = (rr / (prev * rr + (1 - prev))) * baseline;
+  const adjusted = (rr / (prev * rr * (1 - prev))) * baseline;
   return { baseline, adjusted };
 }
 
