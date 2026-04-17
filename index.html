@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACRE — Alcohol & Cancer Risk Estimator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2ec;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --ink: #1a1714;
+    --ink2: #5a554e;
+    --ink3: #9a9590;
+    --accent: #8b3a2a;
+    --accent-light: #f0ddd9;
+    --accent2: #2a5c3a;
+    --accent2-light: #d9eedf;
+    --border: #ddd9d1;
+    --unaffected: #c8dce8;
+    --baseline: #c0382a;
+    --excess: #e8a090;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(26,23,20,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  header {
+    background: var(--ink);
+    color: white;
+    padding: 2rem 2.5rem 1.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--excess), var(--accent));
+  }
+  .header-inner { max-width: 900px; margin: 0 auto; }
+  .header-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 0.5rem;
+    font-weight: 400;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+  }
+  header h1 em { font-style: italic; color: var(--excess); }
+  header p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    max-width: 540px;
+    font-weight: 300;
+  }
+
+  main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* ── inputs card ── */
+  .inputs-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem 2rem;
+    align-items: end;
+  }
+  @media (max-width: 640px) { .inputs-grid { grid-template-columns: 1fr 1fr; } }
+
+  .field-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+  .field-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+  .field-unit { font-size: 12px; color: var(--ink3); margin-left: 4px; font-family: 'DM Sans', sans-serif; }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    margin-top: 0.25rem;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1.5px var(--ink);
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1.5px var(--ink);
+    cursor: pointer;
+  }
+
+  .sex-toggle { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .sex-btn {
+    flex: 1; padding: 10px 0; font-size: 13px; font-family: 'DM Sans', sans-serif;
+    font-weight: 500; border: none; background: transparent; color: var(--ink2);
+    cursor: pointer; transition: background 0.15s, color 0.15s;
+  }
+  .sex-btn.active { background: var(--ink); color: white; }
+
+  .drinks-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--ink3);
+    margin-top: 4px;
+    letter-spacing: 0.03em;
+  }
+  .drinks-zone {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 500;
+    margin-top: 6px;
+  }
+  .zone-none { background: #e8e5de; color: #6a6560; }
+  .zone-low { background: var(--accent2-light); color: var(--accent2); }
+  .zone-moderate { background: #fef3d0; color: #7a5c00; }
+  .zone-high { background: var(--accent-light); color: var(--accent); }
+
+  /* ── cancer tabs ── */
+  .tabs-row {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .tab {
+    padding: 7px 16px; font-size: 13px; font-family: 'DM Sans', sans-serif;
+    border: 1px solid var(--border); border-radius: 99px;
+    background: var(--surface); color: var(--ink2); cursor: pointer;
+    font-weight: 400; transition: all 0.15s;
+  }
+  .tab:hover { border-color: var(--ink3); color: var(--ink); }
+  .tab.active { background: var(--ink); color: white; border-color: var(--ink); font-weight: 500; }
+
+  /* ── results card ── */
+  .results-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.75rem 2rem;
+    box-shadow: var(--shadow);
+  }
+
+  .results-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .results-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem; font-weight: 400;
+  }
+  .results-title span { font-style: italic; color: var(--accent); }
+
+  .legend { display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── icon grid ── */
+  #face-grid {
+    display: grid;
+    grid-template-columns: repeat(40, 1fr);
+    gap: 1px;
+    margin-bottom: 1.5rem;
+  }
+  .face-cell {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .face-svg { width: 100%; height: 100%; max-width: 18px; }
+
+  /* ── stat cards ── */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  @media (max-width: 500px) { .stats-row { grid-template-columns: 1fr; } }
+  .stat-card {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--border);
+  }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 6px; }
+  .stat-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem; line-height: 1; color: var(--ink); margin-bottom: 2px;
+  }
+  .stat-number.excess { color: var(--accent); }
+  .stat-denom { font-size: 11px; color: var(--ink3); }
+  .stat-note { font-size: 11px; color: var(--ink3); margin-top: 4px; font-style: italic; }
+
+  /* ── no-risk message ── */
+  .no-risk-msg {
+    background: var(--accent2-light);
+    border: 1px solid #b0d9bc;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-size: 14px;
+    color: var(--accent2);
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+  .no-risk-msg strong { font-weight: 500; }
+
+  /* ── disclaimer ── */
+  .disclaimer {
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    font-size: 11.5px;
+    color: var(--ink3);
+    line-height: 1.6;
+  }
+  .disclaimer strong { color: var(--ink2); font-weight: 500; }
+
+  /* ── loading ── */
+  .loading-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(245,242,236,0.7);
+    align-items: center; justify-content: center;
+    border-radius: var(--radius);
+    font-size: 13px; color: var(--ink2);
+  }
+  .results-card { position: relative; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <p class="header-eyebrow">Decision Aid · Canada's 2023 Alcohol and Health Guidance</p>
+    <h1>Alcohol &amp; <em>Cancer</em> Risk Estimator</h1>
+    <p>See your estimated 10-year cancer risk based on your age, sex, and weekly alcohol consumption — displayed as 1 in 100 people like you.</p>
+  </div>
+</header>
+
+<main>
+  <div class="inputs-card">
+    <div class="inputs-grid">
+
+      <div>
+        <label class="field-label">Sex at birth</label>
+        <div class="sex-toggle">
+          <button class="sex-btn active" id="btn-female" onclick="setSex('female')">Female</button>
+          <button class="sex-btn" id="btn-male" onclick="setSex('male')">Male</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="field-label">Age</label>
+        <div class="field-value" id="age-out">45<span class="field-unit">yrs</span></div>
+        <input type="range" id="age-slider" min="15" max="84" value="45" step="1" oninput="onAgeChange(this.value)">
+        <div class="drinks-labels"><span>15</span><span>84</span></div>
+      </div>
+
+      <div>
+        <label class="field-label">Standard drinks / week</label>
+        <div class="field-value" id="drinks-out">7<span class="field-unit">drinks</span></div>
+        <input type="range" id="drinks-slider" min="0" max="35" value="7" step="1" oninput="onDrinksChange(this.value)">
+        <div class="drinks-labels"><span>0</span><span>35</span></div>
+        <span class="drinks-zone zone-high" id="zone-label">High risk (7+/wk)</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="tabs-row" id="cancer-tabs"></div>
+
+  <div class="results-card">
+    <div class="results-top">
+      <div class="results-title">Out of 1,000 people like you, <span id="results-title-cancer">head &amp; neck cancer</span></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--baseline)"></div>Affected (baseline)</div>
+        <div class="legend-item" id="excess-legend-item" style="display:none"><div class="legend-swatch" style="background:var(--excess)"></div>Extra cases from alcohol</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--unaffected)"></div>Unaffected</div>
+      </div>
+    </div>
+
+    <div class="no-risk-msg" id="no-risk-msg">
+      <strong>No alcohol-related risk detected.</strong> Either alcohol consumption is 0 drinks/week, or this cancer type has no alcohol-associated relative risk for your sex at the entered intake level.
+    </div>
+
+    <div id="face-grid" role="img" aria-label="Icon array showing cancer risk"></div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Baseline risk</div>
+        <div class="stat-number" id="stat-base">—</div>
+        <div class="stat-denom">per 1,000 people</div>
+        <div class="stat-note">If you drank no alcohol</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Risk at your intake</div>
+        <div class="stat-number" id="stat-current">—</div>
+        <div class="stat-denom">per 1,000 people</div>
+        <div class="stat-note">10-year cumulative risk</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Extra cases from alcohol</div>
+        <div class="stat-number excess" id="stat-extra">—</div>
+        <div class="stat-denom">per 1,000 people</div>
+        <div class="stat-note" id="stat-extra-note">—</div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Important limitations:</strong>
+      These estimates are based on population-level data and should not replace personalized medical advice.
+      Risk estimates use 10-year cumulative incidence and are adjusted for competing mortality (Statistics Canada) and alcohol prevalence (CCHS).
+      Head &amp; neck cancer risk uses relative risk data for oral cavity/pharynx cancers applied to all head &amp; neck cancers — this may overestimate laryngeal cancer risk.
+      Breast cancer risk applies to females only.
+      This tool is intended for educational purposes. Consult a healthcare provider for personal health decisions.
+      Based on <em>Canada's Guidance on Alcohol and Health</em> (2023).
+    </div>
+  </div>
+</main>
+
+<script>
+// ─────────────────────────────────────────────
+// 1. EMBEDDED DATA (from your CSV files)
+// ─────────────────────────────────────────────
+
+// Marginals for IPF: sex × drink category
+const sexMarginals = {
+  female: { '0': 10197, '1_to_2': 2960.2, '3_to_6': 3026.5, '7_plus': 2600.3 },
+  male:   { '0': 8561,  '1_to_2': 2223.7, '3_to_6': 2703.8, '7_plus': 3886.5 }
+};
+
+// Marginals for IPF: age group × drink category
+const ageMarginals = {
+  '15_to_19': { '0': 1903,   '1_to_2': 152.2,  '3_to_6': 207.9,  '7_plus': 267.9 },
+  '20_to_24': { '0': 2584,   '1_to_2': 567.3,  '3_to_6': 632.2,  '7_plus': 706.5 },
+  '25_to_54': { '0': 8518,   '1_to_2': 2447.1, '3_to_6': 2791.5, '7_plus': 3112.4 },
+  '55_plus':  { '0': 5753,   '1_to_2': 2021.3, '3_to_6': 2101.9, '7_plus': 2392.7 }
+};
+
+const sexes = ['female', 'male'];
+const ageGroups = ['15_to_19', '20_to_24', '25_to_54', '55_plus'];
+const drinkCats = ['0', '1_to_2', '3_to_6', '7_plus'];
+
+// ─────────────────────────────────────────────
+// 2. IPF ALGORITHM (ported from alcohol_prevalence_ipf.py)
+// ─────────────────────────────────────────────
+
+function runIPF(maxIter = 1000, tol = 1e-6) {
+  // 3D table: [sex][ageGroup][drinkCat] — initialized to 1
+  const table = {};
+  for (const s of sexes) {
+    table[s] = {};
+    for (const ag of ageGroups) {
+      table[s][ag] = {};
+      for (const dc of drinkCats) table[s][ag][dc] = 1;
+    }
+  }
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    const oldVals = JSON.parse(JSON.stringify(table));
+
+    // Adjust by sex marginals
+    for (const s of sexes) {
+      for (const dc of drinkCats) {
+        const currentSum = ageGroups.reduce((acc, ag) => acc + table[s][ag][dc], 0);
+        const target = sexMarginals[s][dc];
+        if (currentSum > 0) {
+          const factor = target / currentSum;
+          for (const ag of ageGroups) table[s][ag][dc] *= factor;
+        }
+      }
+    }
+
+    // Adjust by age marginals
+    for (const ag of ageGroups) {
+      for (const dc of drinkCats) {
+        const currentSum = sexes.reduce((acc, s) => acc + table[s][ag][dc], 0);
+        const target = ageMarginals[ag][dc];
+        if (currentSum > 0) {
+          const factor = target / currentSum;
+          for (const s of sexes) table[s][ag][dc] *= factor;
+        }
+      }
+    }
+
+    // Convergence check
+    let maxDiff = 0;
+    for (const s of sexes)
+      for (const ag of ageGroups)
+        for (const dc of drinkCats)
+          maxDiff = Math.max(maxDiff, Math.abs(table[s][ag][dc] - oldVals[s][ag][dc]));
+    if (maxDiff < tol) break;
+  }
+  return table;
+}
+
+// Run once on load — store result
+const ipfTable = runIPF();
+
+function getAgeGroup(age) {
+  const a = parseInt(age);
+  if (a >= 15 && a <= 19) return '15_to_19';
+  if (a >= 20 && a <= 24) return '20_to_24';
+  if (a >= 25 && a <= 54) return '25_to_54';
+  return '55_plus';
+}
+
+function prevalence(sex, age, minDrinks) {
+  if (minDrinks < 1) return 0;
+  const ag = getAgeGroup(age);
+  let dcs;
+  if (minDrinks <= 2)      dcs = ['1_to_2', '3_to_6', '7_plus'];
+  else if (minDrinks <= 6) dcs = ['3_to_6', '7_plus'];
+  else                     dcs = ['7_plus'];
+
+  const sub = ipfTable[sex][ag];
+  const denom = drinkCats.reduce((acc, dc) => acc + sub[dc], 0);
+  const numer = dcs.reduce((acc, dc) => acc + sub[dc], 0);
+  return denom > 0 ? numer / denom : NaN;
+}
+
+// ─────────────────────────────────────────────
+// 3. INCIDENCE & MORTALITY RATES (from compute_risk.py)
+// ─────────────────────────────────────────────
+
+// Helper: look up a rate from age-range-keyed objects stored as arrays
+// Stored as [ [minAge, maxAge, rate], ... ]
+
+const mortalityRates = {
+  male: [
+    [-1,1,507],[1,5,24.6],[5,10,9],[10,15,12.9],[15,20,45.7],[20,25,73.4],
+    [25,30,105.8],[30,35,137.6],[35,40,175],[40,45,206.9],[45,50,263.2],
+    [50,55,396.7],[55,60,608.8],[60,65,901.3],[65,70,1368.8],[70,75,2103.6],
+    [75,80,3354.2],[80,85,5836.2],[85,90,10622.4],[90,200,22083.7]
+  ],
+  female: [
+    [-1,1,419.6],[1,5,17.6],[5,10,9.5],[10,15,11.3],[15,20,26.1],[20,25,42],
+    [25,30,56.1],[30,35,70.2],[35,40,89.5],[40,45,108.3],[45,50,155.4],
+    [50,55,228.8],[55,60,356.3],[60,65,559.2],[65,70,878.9],[70,75,1390.2],
+    [75,80,2377.9],[80,85,4178.9],[85,90,7785.4],[90,200,18404.8]
+  ]
+};
+
+const incidenceRates = {
+  head_neck: {
+    male:   [[0,30,0.6],[30,40,2.8],[40,50,13.1],[50,60,40.6],[60,70,71.8],[70,80,83.5],[80,90,87.5],[90,200,76.1]],
+    female: [[0,30,0.6],[30,40,2.3],[40,50,5.2],[50,60,13.3],[60,70,21.7],[70,80,28.8],[80,90,37.2],[90,200,37.4]]
+  },
+  colorectal: {
+    male:   [[0,30,1.2],[30,40,8.5],[40,50,25.9],[50,60,78.2],[60,70,166.5],[70,80,295.9],[80,90,400],[90,200,365.1]],
+    female: [[0,30,1.6],[30,40,8.5],[40,50,22.9],[50,60,53.9],[60,70,103.4],[70,80,192.4],[80,90,302.7],[90,200,287.6]]
+  },
+  breast: {
+    male:   [[0,30,0],[30,40,0.1],[40,50,0.4],[50,60,1.2],[60,70,3],[70,80,5.4],[80,90,7.3],[90,200,5.1]],
+    female: [[0,30,2],[30,40,40.5],[40,50,136.5],[50,60,216.8],[60,70,312.3],[70,80,381.6],[80,90,346.4],[90,200,293]]
+  },
+  liver: {
+    male:   [[0,30,0.2],[30,40,0.4],[40,50,2.4],[50,60,12.7],[60,70,34.9],[70,80,40.5],[80,90,44.8],[90,200,27.9]],
+    female: [[0,30,0.2],[30,40,0.3],[40,50,0.8],[50,60,3],[60,70,7],[70,80,12.2],[80,90,18.4],[90,200,16]]
+  },
+  esophagus: {
+    male:   [[0,30,0.1],[30,40,0.4],[40,50,2.4],[50,60,10.3],[60,70,26.4],[70,80,40.1],[80,90,46.6],[90,200,35.5]],
+    female: [[0,30,0],[30,40,0],[40,50,0.4],[50,60,2.7],[60,70,6.2],[70,80,11.2],[80,90,16.2],[90,200,17.1]]
+  }
+};
+
+// Relative risks: stored as [ [minDrinks, maxDrinks, rr], ... ]
+const relativeRisks = {
+  head_neck: {
+    male: [[1,2,1.051],[2,3,1.103],[3,4,1.158],[4,5,1.216],[5,6,1.276],[6,7,1.338],[7,11,1.370],[11,15,1.894],[15,21,1.894],[18,21,2.523],[21,28,2.523],[28,36,4.384]],
+    female: [[1,2,1.051],[2,3,1.103],[3,4,1.158],[4,5,1.216],[5,6,1.276],[6,7,1.338],[7,11,1.370],[11,18,1.894],[18,21,2.523],[21,28,2.523],[28,36,4.384]]
+  },
+  colorectal: {
+    male: [[1,2,1.014],[2,3,1.027],[3,4,1.041],[4,5,1.056],[5,6,1.07],[6,7,1.085],[7,11,1.092],[11,18,1.200],[18,21,1.311],[21,28,1.311],[28,36,1.574]],
+    female: [[1,2,1.014],[2,3,1.027],[3,4,1.041],[4,5,1.056],[5,6,1.07],[6,7,1.085],[7,11,1.092],[11,18,1.200],[18,21,1.311],[21,28,1.311],[28,36,1.574]]
+  },
+  breast: {
+    male: [[1,36,1.0]],
+    female: [[1,2,1.018],[2,3,1.037],[3,4,1.056],[4,5,1.076],[5,6,1.095],[6,7,1.116],[7,11,1.126],[11,18,1.279],[18,21,1.440],[21,28,1.440],[28,36,1.842]]
+  },
+  liver: {
+    male: [[1,2,1.008],[2,3,1.016],[3,4,1.024],[4,5,1.032],[5,6,1.040],[6,7,1.048],[7,11,1.052],[11,18,1.112],[18,21,1.170],[21,28,1.170],[28,36,1.301]],
+    female: [[1,2,1.008],[2,3,1.016],[3,4,1.024],[4,5,1.032],[5,6,1.040],[6,7,1.048],[7,11,1.052],[11,18,1.112],[18,21,1.170],[21,28,1.170],[28,36,1.301]]
+  },
+  esophagus: {
+    male: [[1,2,1.027],[2,3,1.054],[3,4,1.082],[4,5,1.111],[5,6,1.141],[6,7,1.172],[7,11,1.187],[11,18,1.427],[18,21,1.691],[21,28,1.691],[28,36,2.393]],
+    female: [[1,2,1.027],[2,3,1.054],[3,4,1.082],[4,5,1.111],[5,6,1.141],[6,7,1.172],[7,11,1.187],[11,18,1.427],[18,21,1.691],[21,28,1.691],[28,36,2.393]]
+  }
+};
+
+function lookupRate(table, age) {
+  for (const [min, max, rate] of table)
+    if (age >= min && age < max) return rate;
+  return 0;
+}
+
+function lookupRR(disease, sex, drinks) {
+  if (drinks < 1) return 1;
+  const capped = Math.min(drinks, 35);
+  for (const [min, max, rr] of relativeRisks[disease][sex])
+    if (capped >= min && capped < max) return rr;
+  // drinks == 35 → use last bucket
+  const last = relativeRisks[disease][sex];
+  return last[last.length - 1][2];
+}
+
+// ─────────────────────────────────────────────
+// 4. RISK CALCULATION (ported from compute_risk.py)
+// ─────────────────────────────────────────────
+
+function baselineRiskCIF(disease, age, sex) {
+  const incTable = incidenceRates[disease][sex];
+  const mortTable = mortalityRates[sex];
+  let terms = [];
+
+  for (let a = age; a < age + 10; a++) {
+    const ir = lookupRate(incTable, a) / 100000;
+    // product of survival factors for ages before a
+    let survivalProduct = 1;
+    for (let prev = age; prev < a; prev++) {
+      const prevIR = lookupRate(incTable, prev) / 100000;
+      const prevMR = lookupRate(mortTable, prev) / 100000;
+      survivalProduct *= (1 - prevIR - prevMR);
+    }
+    terms.push(ir * survivalProduct);
+  }
+
+  return terms.reduce((a, b) => a + b, 0);
+}
+
+function alcoholRisk(disease, age, sex, drinks) {
+  if (drinks < 1) return { baseline: baselineRiskCIF(disease, age, sex), adjusted: null };
+
+  const prev = prevalence(sex, age, drinks);
+  const baseline = baselineRiskCIF(disease, age, sex);
+  const rr = lookupRR(disease, sex, drinks);
+
+  // Formula from compute_risk.py:
+  // (RR / (prev*RR + (1-prev))) * baseline
+  const adjusted = (rr / (prev * rr + (1 - prev))) * baseline;
+  return { baseline, adjusted };
+}
+
+// ─────────────────────────────────────────────
+// 5. UI STATE & RENDERING
+// ─────────────────────────────────────────────
+
+const CANCERS = [
+  { id: 'head_neck',  label: 'Head & neck' },
+  { id: 'colorectal', label: 'Colorectal' },
+  { id: 'breast',     label: 'Breast' },
+  { id: 'liver',      label: 'Liver' },
+  { id: 'esophagus',  label: 'Esophagus' }
+];
+
+let state = { sex: 'female', age: 45, drinks: 7, cancer: 'head_neck' };
+
+// Build cancer tabs
+const tabsEl = document.getElementById('cancer-tabs');
+CANCERS.forEach(c => {
+  const btn = document.createElement('button');
+  btn.className = 'tab' + (c.id === state.cancer ? ' active' : '');
+  btn.dataset.id = c.id;
+  btn.textContent = c.label;
+  btn.onclick = () => { state.cancer = c.id; tabsEl.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.id === c.id)); render(); };
+  tabsEl.appendChild(btn);
+});
+
+function setSex(s) {
+  state.sex = s;
+  document.getElementById('btn-female').classList.toggle('active', s === 'female');
+  document.getElementById('btn-male').classList.toggle('active', s === 'male');
+  render();
+}
+function onAgeChange(v) {
+  state.age = parseInt(v);
+  document.getElementById('age-out').innerHTML = v + '<span class="field-unit">yrs</span>';
+  render();
+}
+function onDrinksChange(v) {
+  state.drinks = parseInt(v);
+  document.getElementById('drinks-out').innerHTML = v + '<span class="field-unit">drinks</span>';
+  updateZoneLabel(parseInt(v));
+  render();
+}
+function updateZoneLabel(d) {
+  const el = document.getElementById('zone-label');
+  if (d === 0)      { el.className = 'drinks-zone zone-none'; el.textContent = 'No alcohol'; }
+  else if (d <= 2)  { el.className = 'drinks-zone zone-low';  el.textContent = 'Low risk (1–2/wk)'; }
+  else if (d <= 6)  { el.className = 'drinks-zone zone-moderate'; el.textContent = 'Moderate risk (3–6/wk)'; }
+  else              { el.className = 'drinks-zone zone-high'; el.textContent = 'High risk (7+/wk)'; }
+}
+
+// SVG face builders
+function happySVG(color) {
+  return `<svg class="face-svg" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="16" cy="16" r="14" fill="${color}" opacity="0.9"/>
+    <circle cx="11" cy="13" r="1.8" fill="white" opacity="0.7"/>
+    <circle cx="21" cy="13" r="1.8" fill="white" opacity="0.7"/>
+    <path d="M10 19 Q16 25 22 19" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+function sadSVG(color) {
+  return `<svg class="face-svg" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="16" cy="16" r="14" fill="${color}" opacity="0.95"/>
+    <circle cx="11" cy="13" r="1.8" fill="white" opacity="0.7"/>
+    <circle cx="21" cy="13" r="1.8" fill="white" opacity="0.7"/>
+    <path d="M10 22 Q16 16 22 22" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function render() {
+  const { sex, age, drinks, cancer } = state;
+  const { baseline, adjusted } = alcoholRisk(cancer, age, sex, drinks);
+
+  // Convert to per-1000
+  const basePer1000 = Math.round(baseline * 1000 * 10) / 10;
+  const adjPer1000  = adjusted !== null ? Math.round(adjusted * 1000 * 10) / 10 : null;
+
+  // For grid display, integer counts out of 1000
+  const baselineInt = Math.min(Math.round(baseline * 1000), 1000);
+  const adjustedInt = adjusted !== null ? Math.min(Math.round(adjusted * 1000), 1000) : baselineInt;
+
+  const hasAlcohol = drinks >= 1 && adjusted !== null && adjusted > baseline;
+
+  // No-risk message
+  const noRiskMsg = document.getElementById('no-risk-msg');
+  noRiskMsg.style.display = (drinks >= 1 && !hasAlcohol) ? 'block' : 'none';
+
+  // Excess legend
+  document.getElementById('excess-legend-item').style.display = hasAlcohol ? 'flex' : 'none';
+
+  // Title cancer name
+  document.getElementById('results-title-cancer').textContent =
+    CANCERS.find(c => c.id === cancer).label.toLowerCase() + ' cancer';
+
+  // Draw grid (1000 faces, 40×25)
+  const grid = document.getElementById('face-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 1000; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'face-cell';
+    if (i < baselineInt) {
+      cell.innerHTML = sadSVG('var(--baseline)');
+      cell.title = 'Affected (baseline risk)';
+    } else if (i < adjustedInt) {
+      cell.innerHTML = sadSVG('var(--excess)');
+      cell.title = 'Additional risk from alcohol';
+    } else {
+      cell.innerHTML = happySVG('var(--unaffected)');
+      cell.title = 'Unaffected';
+    }
+    grid.appendChild(cell);
+  }
+
+  // Stats
+  document.getElementById('stat-base').textContent = basePer1000.toFixed(1);
+  document.getElementById('stat-current').textContent =
+    adjPer1000 !== null ? adjPer1000.toFixed(1) : basePer1000.toFixed(1);
+
+  const extra = adjPer1000 !== null ? Math.max(adjPer1000 - basePer1000, 0) : 0;
+  document.getElementById('stat-extra').textContent = extra > 0 ? '+' + extra.toFixed(1) : '0';
+  document.getElementById('stat-extra-note').textContent =
+    extra > 0
+      ? `RR = ${lookupRR(cancer, sex, drinks).toFixed(3)} at ${drinks} drinks/wk`
+      : 'No excess risk at this intake';
+}
+
+// Init
+updateZoneLabel(7);
+render();
+</script>
+</body>
+</html>
