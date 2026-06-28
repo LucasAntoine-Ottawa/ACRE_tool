@@ -72,7 +72,69 @@
 </style>
 </head>
 <body>
+<!-- Access gate — shown before password is entered -->
+<div id="access-gate" style="
+  position: fixed; inset: 0; z-index: 9999;
+  background: #f5f2ec;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+">
+  <div style="max-width: 480px; padding: 2.5rem; background: white;
+              border-radius: 12px; border: 1px solid #ddd9d1;
+              box-shadow: 0 2px 12px rgba(26,23,20,0.08);">
 
+    <p style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+              color:#9a9590; margin-bottom:0.75rem;">
+      Alcohol & Cancer Risk Estimator
+    </p>
+
+    <h2 style="font-family:'DM Serif Display',serif; font-size:1.4rem;
+               font-weight:400; margin-bottom:1rem; color:#1a1714;">
+      Research Access Only
+    </h2>
+
+    <div style="background:#fef3d0; border:1px solid #f0d080; border-radius:8px;
+                padding:0.9rem 1rem; margin-bottom:1.25rem; font-size:13px;
+                color:#5a4a00; line-height:1.6;">
+      <strong style="display:block; margin-bottom:4px;">
+        ⚠ Not for clinical use
+      </strong>
+      This tool is a research prototype under development. It has not been
+      validated for use in clinical decision-making and should not be used
+      to counsel patients outside of an approved research study. Results
+      are for research and educational purposes only.
+    </div>
+
+    <p style="font-size:13px; color:#5a554e; margin-bottom:1.25rem; line-height:1.6;">
+      If you have been given access, please
+      enter the access code below.
+    </p>
+
+    <input type="password" id="gate-input" placeholder="Enter access code"
+      style="width:100%; padding:10px 12px; font-size:14px; font-family:'DM Sans',sans-serif;
+             border:1px solid #ddd9d1; border-radius:8px; outline:none;
+             margin-bottom:0.75rem; box-sizing:border-box;"
+      onkeydown="if(event.key==='Enter') checkPassword()">
+
+    <p id="gate-error" style="font-size:12px; color:#8b3a2a; margin-bottom:0.75rem;
+                               display:none;">
+      Incorrect access code. Please try again.
+    </p>
+
+    <button onclick="checkPassword()" style="
+      width:100%; padding:11px; font-size:14px; font-family:'DM Sans',sans-serif;
+      font-weight:500; background:#1a1714; color:white; border:none;
+      border-radius:8px; cursor:pointer;">
+      Access Tool
+    </button>
+
+    <p style="font-size:11px; color:#9a9590; margin-top:1rem; text-align:center;">
+      For access or questions, contact
+      <a href="mailto:lcora065@uottawa.ca" style="color:#5a554e;">lcora065@uottawa.ca</a>
+    </p>
+
+  </div>
+</div>
 <header>
   <div class="header-inner">
     <p class="header-eyebrow">Decision Aid · Canada's 2023 Alcohol and Health Guidance</p>
@@ -154,6 +216,22 @@
 </main>
 
 <script>
+// =============================================================================
+// 0. PASSWORD 
+//    Before website is publicly available, it will need a password to access
+// =============================================================================
+const ACCESS_CODE = 'We1henst3phan';
+
+function checkPassword() {
+  const input = document.getElementById('gate-input').value;
+  if (input === ACCESS_CODE) {
+    document.getElementById('access-gate').style.display = 'none';
+  } else {
+    document.getElementById('gate-error').style.display = 'block';
+    document.getElementById('gate-input').value = '';
+    document.getElementById('gate-input').focus();
+  }
+}
 // =============================================================================
 // 1. IPF MARGINAL DATA
 //    Source: sex_at_birth_drinking.csv and age_drinking.csv (exact values)
